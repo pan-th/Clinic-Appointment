@@ -1,3 +1,8 @@
+{{-- ============================================================
+     CLINIC NAVBAR COMPONENT
+     Usage: Add <x-navbar /> to any Blade layout file.
+     Automatically shows/hides links based on login status and role.
+     ============================================================ --}}
 
 <nav class="bg-blue-700 shadow-lg">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,10 +19,10 @@
                 </a>
             </div>
 
-            {{-- ── NAVIGATION LINKS (Center / Right) ── --}}
+            {{-- ── NAVIGATION LINKS (Right Side) ── --}}
             <div class="flex items-center space-x-1">
 
-                {{-- Home Link --}}
+                {{-- Home — visible to everyone --}}
                 <a href="{{ route('home') }}"
                    class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
                           {{ request()->routeIs('home')
@@ -26,27 +31,10 @@
                     Home
                 </a>
 
-                {{-- Show these links only if the user is LOGGED IN --}}
+                {{-- ── LOGGED-IN LINKS ── --}}
                 @auth
-                    {{-- Appointments List --}}
-                    <a href="{{ route('appointments.index') }}"
-                       class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                              {{ request()->routeIs('appointments.index')
-                                  ? 'bg-white text-blue-700 font-semibold'
-                                  : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
-                        Appointments
-                    </a>
 
-                    {{-- Add Appointment --}}
-                    <a href="{{ route('appointments.create') }}"
-                       class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                              {{ request()->routeIs('appointments.create')
-                                  ? 'bg-white text-blue-700 font-semibold'
-                                  : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
-                        + Add Appointment
-                    </a>
-
-                    {{-- Dashboard --}}
+                    {{-- Dashboard — visible to all logged-in roles --}}
                     <a href="{{ route('dashboard') }}"
                        class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
                               {{ request()->routeIs('dashboard')
@@ -55,14 +43,67 @@
                         Dashboard
                     </a>
 
-                    {{-- Show "Admin Panel" badge only for admins --}}
+                    {{-- Appointments — visible to Admin and Patient only --}}
+                    @if(auth()->user()->isAdmin() || auth()->user()->isPatient())
+                        <a href="{{ route('appointments.index') }}"
+                           class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                                  {{ request()->routeIs('appointments.*')
+                                      ? 'bg-white text-blue-700 font-semibold'
+                                      : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                            Appointments
+                        </a>
+                    @endif
+
+                    {{-- Add Appointment — visible to Patients only --}}
+                    @if(auth()->user()->isPatient())
+                        <a href="{{ route('appointments.create') }}"
+                           class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                                  {{ request()->routeIs('appointments.create')
+                                      ? 'bg-white text-blue-700 font-semibold'
+                                      : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                            + Book Appointment
+                        </a>
+                    @endif
+
+                    {{-- Nurse Queue — visible to Nurses only --}}
+                    @if(auth()->user()->isNurse())
+                        <a href="{{ route('nurse.appointments.index') }}"
+                           class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                                  {{ request()->routeIs('nurse.*')
+                                      ? 'bg-white text-blue-700 font-semibold'
+                                      : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                            Appointment Queue
+                        </a>
+                    @endif
+
+                    {{-- Doctor Schedule — visible to Doctors only --}}
+                    @if(auth()->user()->isDoctor())
+                        <a href="{{ route('doctor.appointments.index') }}"
+                           class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                                  {{ request()->routeIs('doctor.*')
+                                      ? 'bg-white text-blue-700 font-semibold'
+                                      : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
+                            My Schedule
+                        </a>
+                    @endif
+
+                    {{-- ── ROLE BADGE ── --}}
+                    {{-- Shows a colored badge indicating the logged-in user's role --}}
                     @if(auth()->user()->isAdmin())
                         <span class="px-2 py-1 rounded-full text-xs font-bold bg-yellow-400 text-yellow-900">
                             ADMIN
                         </span>
+                    @elseif(auth()->user()->isNurse())
+                        <span class="px-2 py-1 rounded-full text-xs font-bold bg-blue-400 text-blue-900">
+                            NURSE
+                        </span>
+                    @elseif(auth()->user()->isDoctor())
+                        <span class="px-2 py-1 rounded-full text-xs font-bold bg-green-400 text-green-900">
+                            DOCTOR
+                        </span>
                     @endif
 
-                    {{-- Logout Button --}}
+                    {{-- Logout --}}
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
                         <button type="submit"
@@ -71,9 +112,10 @@
                             Logout
                         </button>
                     </form>
+
                 @endauth
 
-                {{-- Show these links only if the user is NOT logged in --}}
+                {{-- ── GUEST LINKS (not logged in) ── --}}
                 @guest
                     <a href="{{ route('login') }}"
                        class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
@@ -82,7 +124,6 @@
                                   : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
                         Login
                     </a>
-
                     <a href="{{ route('register') }}"
                        class="px-4 py-2 rounded-md text-sm font-medium bg-white text-blue-700
                               hover:bg-blue-50 transition-colors duration-200">

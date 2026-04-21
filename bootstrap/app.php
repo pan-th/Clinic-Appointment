@@ -10,11 +10,15 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-  ->withMiddleware(function (Middleware $middleware) {
-    $middleware->alias([
-        'admin' => \App\Http\Middleware\AdminMiddleware::class,
-    ]);
-})
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withMiddleware(function (Middleware $middleware) {
+        // Registers short alias names for each role middleware.
+        // Usage in routes: middleware('admin'), middleware('nurse'), middleware('doctor')
+        $middleware->alias([
+            'admin'  => \App\Http\Middleware\AdminMiddleware::class,
+            'nurse'  => \App\Http\Middleware\NurseMiddleware::class,
+            'doctor' => \App\Http\Middleware\DoctorMiddleware::class,
+        ]);
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

@@ -66,12 +66,12 @@ class AppointmentController extends Controller
         ]);
 
         Appointment::create([
-            'user_id'          => Auth::id(),        
+            'user_id'          => Auth::id(),
             'doctor_name'      => $request->doctor_name,
             'appointment_date' => $request->appointment_date,
             'appointment_time' => $request->appointment_time,
             'reason'           => $request->reason,
-            'status'           => 'pending',         
+            'status'           => 'pending',
         ]);
 
         return redirect()->route('appointments.index')

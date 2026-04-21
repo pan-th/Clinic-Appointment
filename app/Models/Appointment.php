@@ -16,8 +16,10 @@ class Appointment extends Model
         'appointment_time',
         'reason',
         'status',
+        'notes',
     ];
 
+    // Each appointment belongs to one patient (user)
     public function patient()
     {
         return $this->belongsTo(User::class, 'user_id');
