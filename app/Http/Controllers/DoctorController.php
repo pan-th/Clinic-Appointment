@@ -9,14 +9,19 @@ use Illuminate\Support\Facades\Auth;
 class DoctorController extends Controller
 {
     /**
-     * INDEX — Shows only appointments assigned to this doctor.
-     * Matches doctor_name column against the logged-in user's name.
-     * Ordered by appointment date ascending so the doctor sees their next patient first.
+     * INDEX — Shows only CONFIRMED appointments assigned to this doctor.
+     * Filters by two conditions:
+     * 1. doctor_name must match the logged-in doctor's name exactly
+     * 2. status must be 'confirmed' — pending and cancelled are hidden from doctors
+     *
+     * Doctors only see appointments after a nurse or admin has confirmed them.
+     * This prevents doctors from seeing unverified or cancelled bookings.
      */
     public function index()
     {
         $appointments = Appointment::with('patient')
             ->where('doctor_name', Auth::user()->name)
+            ->where('status', 'confirmed')
             ->orderBy('appointment_date', 'asc')
             ->orderBy('appointment_time', 'asc')
             ->get();
@@ -31,7 +36,6 @@ class DoctorController extends Controller
      */
     public function addNote(Request $request, Appointment $appointment)
     {
-        // Verify this appointment actually belongs to the logged-in doctor
         if ($appointment->doctor_name !== Auth::user()->name) {
             abort(403, 'You can only add notes to your own appointments.');
         }
