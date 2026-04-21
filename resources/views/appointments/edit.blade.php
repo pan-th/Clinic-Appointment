@@ -10,24 +10,50 @@
     {{-- ── FORM CARD ── --}}
     <div class="max-w-2xl bg-white rounded-xl shadow-sm border border-gray-200 p-8">
 
-        {{-- @method('PUT') tells Laravel this is an update, not a create --}}
         <form method="POST" action="{{ route('appointments.update', $appointment) }}">
             @csrf
             @method('PUT')
 
-            {{-- ── Doctor Name ── --}}
+            {{-- ── Doctor Name Dropdown ── --}}
             <div class="mb-5">
                 <label for="doctor_name" class="block text-sm font-semibold text-gray-700 mb-1">
-                    Doctor's Name <span class="text-red-500">*</span>
+                    Select Doctor <span class="text-red-500">*</span>
                 </label>
-                <input type="text"
-                       name="doctor_name"
-                       id="doctor_name"
-                       value="{{ old('doctor_name', $appointment->doctor_name) }}"
-                       placeholder="e.g. Dr. Maria Santos"
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                              @error('doctor_name') border-red-400 bg-red-50 @enderror">
+
+                @if($doctors->isEmpty())
+                    {{-- No doctor accounts exist yet --}}
+                    <select name="doctor_name"
+                            id="doctor_name"
+                            disabled
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm
+                                   bg-gray-100 text-gray-400 cursor-not-allowed
+                                   focus:outline-none">
+                        <option>No doctors available — ask admin to add a doctor account</option>
+                    </select>
+                    <p class="mt-1 text-xs text-amber-600">
+                        ⚠ No doctors are registered yet. An admin must create a doctor account first.
+                    </p>
+                @else
+                    <select name="doctor_name"
+                            id="doctor_name"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm
+                                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                                   @error('doctor_name') border-red-400 bg-red-50 @enderror">
+
+                        <option value="" disabled>— Select a doctor —</option>
+
+                        @foreach($doctors as $doctor)
+                            {{-- old() takes priority for re-population after validation errors --}}
+                            {{-- Falls back to the appointment's currently saved doctor_name --}}
+                            <option value="{{ $doctor->name }}"
+                                {{ old('doctor_name', $appointment->doctor_name) === $doctor->name ? 'selected' : '' }}>
+                                Dr. {{ $doctor->name }}
+                            </option>
+                        @endforeach
+
+                    </select>
+                @endif
+
                 @error('doctor_name')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
@@ -88,7 +114,6 @@
             </div>
 
             {{-- ── Status (Admin Only) ── --}}
-            {{-- This field only appears if the logged-in user is an admin --}}
             @if(auth()->user()->isAdmin())
                 <div class="mb-6">
                     <label for="status" class="block text-sm font-semibold text-gray-700 mb-1">
@@ -99,9 +124,9 @@
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm
                                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
                                    @error('status') border-red-400 bg-red-50 @enderror">
-                        <option value="pending"   {{ $appointment->status === 'pending'   ? 'selected' : '' }}>Pending</option>
-                        <option value="confirmed" {{ $appointment->status === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                        <option value="cancelled" {{ $appointment->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                        <option value="pending"   {{ old('status', $appointment->status) === 'pending'   ? 'selected' : '' }}>Pending</option>
+                        <option value="confirmed" {{ old('status', $appointment->status) === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                        <option value="cancelled" {{ old('status', $appointment->status) === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
                     @error('status')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>

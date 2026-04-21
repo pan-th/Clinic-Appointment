@@ -11,22 +11,52 @@
     <div class="max-w-2xl bg-white rounded-xl shadow-sm border border-gray-200 p-8">
 
         <form method="POST" action="{{ route('appointments.store') }}">
-            @csrf {{-- Security token — always required in forms --}}
+            @csrf
 
-            {{-- ── Doctor Name ── --}}
+            {{-- ── Doctor Name Dropdown ── --}}
             <div class="mb-5">
                 <label for="doctor_name" class="block text-sm font-semibold text-gray-700 mb-1">
-                    Doctor's Name <span class="text-red-500">*</span>
+                    Select Doctor <span class="text-red-500">*</span>
                 </label>
-                <input type="text"
-                       name="doctor_name"
-                       id="doctor_name"
-                       value="{{ old('doctor_name') }}"
-                       placeholder="e.g. Dr. Maria Santos"
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm
-                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                              @error('doctor_name') border-red-400 bg-red-50 @enderror">
-                {{-- Show validation error if doctor name is missing --}}
+
+                @if($doctors->isEmpty())
+                    {{-- No doctor accounts exist yet — show a disabled notice --}}
+                    <select name="doctor_name"
+                            id="doctor_name"
+                            disabled
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm
+                                   bg-gray-100 text-gray-400 cursor-not-allowed
+                                   focus:outline-none">
+                        <option>No doctors available — ask admin to add a doctor account</option>
+                    </select>
+                    <p class="mt-1 text-xs text-amber-600">
+                        ⚠ No doctors are registered yet. An admin must create a doctor account first.
+                    </p>
+                @else
+                    <select name="doctor_name"
+                            id="doctor_name"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm
+                                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                                   @error('doctor_name') border-red-400 bg-red-50 @enderror">
+
+                        {{-- Default placeholder option --}}
+                        <option value="" disabled {{ old('doctor_name') ? '' : 'selected' }}>
+                            — Select a doctor —
+                        </option>
+
+                        {{-- One option per doctor user — value is the doctor's name string --}}
+                        {{-- DoctorController matches appointments by doctor_name = auth()->user()->name --}}
+                        {{-- so the value MUST be the name, not the ID --}}
+                        @foreach($doctors as $doctor)
+                            <option value="{{ $doctor->name }}"
+                                {{ old('doctor_name') === $doctor->name ? 'selected' : '' }}>
+                                Dr. {{ $doctor->name }}
+                            </option>
+                        @endforeach
+
+                    </select>
+                @endif
+
                 @error('doctor_name')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror

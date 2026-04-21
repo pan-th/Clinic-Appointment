@@ -43,19 +43,20 @@
                         Dashboard
                     </a>
 
-                    {{-- Appointments — visible to Admin and Patient only --}}
+                    {{-- Appointments List — visible to Admin and Patient --}}
                     @if(auth()->user()->isAdmin() || auth()->user()->isPatient())
                         <a href="{{ route('appointments.index') }}"
                            class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
-                                  {{ request()->routeIs('appointments.*')
+                                  {{ request()->routeIs('appointments.index')
                                       ? 'bg-white text-blue-700 font-semibold'
                                       : 'text-blue-100 hover:bg-blue-600 hover:text-white' }}">
                             Appointments
                         </a>
                     @endif
 
-                    {{-- Add Appointment — visible to Patients only --}}
-                    @if(auth()->user()->isPatient())
+                    {{-- Book Appointment — visible to Patients AND Admins --}}
+                    {{-- Admin may need to book on behalf of a patient --}}
+                    @if(auth()->user()->isPatient() || auth()->user()->isAdmin())
                         <a href="{{ route('appointments.create') }}"
                            class="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
                                   {{ request()->routeIs('appointments.create')
@@ -88,7 +89,6 @@
                     @endif
 
                     {{-- ── ROLE BADGE ── --}}
-                    {{-- Shows a colored badge indicating the logged-in user's role --}}
                     @if(auth()->user()->isAdmin())
                         <span class="px-2 py-1 rounded-full text-xs font-bold bg-yellow-400 text-yellow-900">
                             ADMIN
