@@ -9,26 +9,44 @@ use Illuminate\Support\Facades\Auth;
 class AppointmentController extends Controller
 {
     /**
-     * INDEX — Shows the list of all appointments.
-     * Admins see ALL appointments from all patients.
-     * Patients only see THEIR OWN appointments.
+     * INDEX — Lists appointments with optional search and status filters.
+     * Admin sees all records. Patient sees only their own.
+     * Filters are read from GET query parameters: ?search=Santos&status=confirmed
      */
-    public function index()
+    public function index(Request $request)
     {
+        // Read the two optional filter values from the URL query string
+        $search = $request->input('search');
+        $status = $request->input('status');
+
         if (Auth::user()->isAdmin()) {
-            // Admin: get all appointments, and also load the patient's name
-            $appointments = Appointment::with('patient')->latest()->get();
+            // Admin: start with ALL appointments, eager-load the patient name
+            $query = Appointment::with('patient');
         } else {
-            // Patient: only get appointments that belong to the logged-in user
-            $appointments = Appointment::where('user_id', Auth::id())->latest()->get();
+            // Patient: start with only their own appointments
+            $query = Appointment::with('patient')
+                ->where('user_id', Auth::id());
         }
 
-        return view('appointments.index', compact('appointments'));
+        // Apply doctor name search filter if a search term was typed
+        if (!empty($search)) {
+            $query->where('doctor_name', 'like', '%' . $search . '%');
+        }
+
+        // Apply status filter only if a real status was selected (not "all")
+        if (!empty($status) && $status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        // Order by most recently created first
+        $appointments = $query->latest()->get();
+
+        // Pass $search and $status back to the view so the form retains its values
+        return view('appointments.index', compact('appointments', 'search', 'status'));
     }
 
     /**
      * CREATE — Shows the form to book a new appointment.
-     * Both admins and patients can see this form.
      */
     public function create()
     {
@@ -36,8 +54,7 @@ class AppointmentController extends Controller
     }
 
     /**
-     * STORE — Saves the new appointment to the database.
-     * Validates the form inputs before saving.
+     * STORE — Validates and saves a new appointment to the database.
      */
     public function store(Request $request)
     {
@@ -62,8 +79,8 @@ class AppointmentController extends Controller
     }
 
     /**
-     * SHOW — Displays the details of one appointment.
-     * Patients can only view their own. Admins can view any.
+     * SHOW — Displays the full details of one appointment.
+     * Patients may only view their own. Admins may view any.
      */
     public function show(Appointment $appointment)
     {
@@ -75,8 +92,8 @@ class AppointmentController extends Controller
     }
 
     /**
-     * EDIT — Shows the form to edit an existing appointment.
-     * Patients can only edit their own. Admins can edit any.
+     * EDIT — Shows the pre-filled edit form for an existing appointment.
+     * Patients may only edit their own. Admins may edit any.
      */
     public function edit(Appointment $appointment)
     {
@@ -88,8 +105,8 @@ class AppointmentController extends Controller
     }
 
     /**
-     * UPDATE — Saves the edited appointment data to the database.
-     * Only admins can change the status (pending/confirmed/cancelled).
+     * UPDATE — Saves changes to an existing appointment.
+     * Only admins may update the status field.
      */
     public function update(Request $request, Appointment $appointment)
     {
@@ -128,8 +145,8 @@ class AppointmentController extends Controller
     }
 
     /**
-     * DESTROY — Deletes an appointment permanently.
-     * Patients can only delete their own. Admins can delete any.
+     * DESTROY — Permanently deletes an appointment.
+     * Patients may only delete their own. Admins may delete any.
      */
     public function destroy(Appointment $appointment)
     {

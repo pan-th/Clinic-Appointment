@@ -10,9 +10,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Adds a "role" column after the "email" column
-            // A user can only be either 'admin' or 'patient'
-            // New users are automatically 'patient' by default
             $table->enum('role', ['admin', 'patient'])->default('patient')->after('email');
         });
     }
