@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class NurseController extends Controller
 {
@@ -24,8 +25,8 @@ class NurseController extends Controller
 
     /**
      * UPDATE STATUS — Nurse can change status to 'confirmed' or 'cancelled' only.
-     * 'pending' is not listed here because pending is the default on creation.
-     * Only valid values are accepted — anything else is rejected with a 422 error.
+     * Records which nurse performed the action and exactly when it was done.
+     * These three fields are always updated together as one atomic operation.
      */
     public function updateStatus(Request $request, Appointment $appointment)
     {
@@ -34,7 +35,9 @@ class NurseController extends Controller
         ]);
 
         $appointment->update([
-            'status' => $request->status,
+            'status'               => $request->status,
+            'actioned_by_nurse_id' => Auth::id(),  // Track which nurse did this
+            'actioned_at'          => now(),        // Track exactly when they did it
         ]);
 
         return redirect()->route('nurse.appointments.index')

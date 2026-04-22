@@ -25,13 +25,10 @@
     </div>
 
     {{-- ── SEARCH AND FILTER BAR ── --}}
-    {{-- Submits as a GET request so filters appear in the URL --}}
-    {{-- This means the browser back button and page refresh preserve the filter state --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-5">
         <form method="GET" action="{{ route('appointments.index') }}"
               class="flex flex-col sm:flex-row gap-3 items-end">
 
-            {{-- Doctor Name Search --}}
             <div class="flex-1">
                 <label for="search" class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">
                     Search by Doctor
@@ -45,7 +42,6 @@
                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
 
-            {{-- Status Filter Dropdown --}}
             <div class="w-full sm:w-48">
                 <label for="status" class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wider">
                     Filter by Status
@@ -54,21 +50,19 @@
                         id="status"
                         class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm
                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="all"      {{ ($status ?? 'all') === 'all'      ? 'selected' : '' }}>All Statuses</option>
-                    <option value="pending"  {{ ($status ?? '') === 'pending'     ? 'selected' : '' }}>Pending</option>
-                    <option value="confirmed"{{ ($status ?? '') === 'confirmed'   ? 'selected' : '' }}>Confirmed</option>
-                    <option value="cancelled"{{ ($status ?? '') === 'cancelled'   ? 'selected' : '' }}>Cancelled</option>
+                    <option value="all"       {{ ($status ?? 'all') === 'all'      ? 'selected' : '' }}>All Statuses</option>
+                    <option value="pending"   {{ ($status ?? '') === 'pending'     ? 'selected' : '' }}>Pending</option>
+                    <option value="confirmed" {{ ($status ?? '') === 'confirmed'   ? 'selected' : '' }}>Confirmed</option>
+                    <option value="cancelled" {{ ($status ?? '') === 'cancelled'   ? 'selected' : '' }}>Cancelled</option>
                 </select>
             </div>
 
-            {{-- Action Buttons --}}
             <div class="flex gap-2 pb-0.5">
                 <button type="submit"
                         class="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg
                                hover:bg-blue-700 transition-colors duration-200 shadow">
                     Search
                 </button>
-                {{-- Clear resets the form by going back to the base URL with no parameters --}}
                 <a href="{{ route('appointments.index') }}"
                    class="px-5 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg
                           hover:bg-gray-200 transition-colors duration-200">
@@ -79,7 +73,7 @@
         </form>
     </div>
 
-    {{-- Active filter indicator — shows when a filter is currently applied --}}
+    {{-- Active filter indicator --}}
     @if(!empty($search) || (!empty($status) && $status !== 'all'))
         <div class="mb-4 flex items-center gap-2">
             <span class="text-sm text-gray-500">Showing results for:</span>
@@ -141,6 +135,13 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-blue-100 uppercase tracking-wider">
                             Status
                         </th>
+                        {{-- Actioned By column — admin eyes only --}}
+                        {{-- Shows which nurse confirmed or cancelled each appointment --}}
+                        @if(auth()->user()->isAdmin())
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-blue-100 uppercase tracking-wider">
+                                Actioned By
+                            </th>
+                        @endif
                         <th class="px-6 py-3 text-right text-xs font-semibold text-blue-100 uppercase tracking-wider">
                             Actions
                         </th>
@@ -150,6 +151,7 @@
                     @foreach($appointments as $appointment)
                         <tr class="hover:bg-gray-50 transition-colors">
 
+                            {{-- Patient Name (admin only) --}}
                             @if(auth()->user()->isAdmin())
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-2">
@@ -165,18 +167,22 @@
                                 </td>
                             @endif
 
+                            {{-- Doctor Name --}}
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                 Dr. {{ $appointment->doctor_name }}
                             </td>
 
+                            {{-- Date --}}
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                 {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y') }}
                             </td>
 
+                            {{-- Time --}}
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                 {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}
                             </td>
 
+                            {{-- Status Badge --}}
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @php
                                     $statusClasses = match($appointment->status) {
@@ -190,6 +196,30 @@
                                 </span>
                             </td>
 
+                            {{-- Actioned By (admin only) --}}
+                            {{-- Shows the nurse's name, what action they took, and when --}}
+                            {{-- Completely hidden from patients, nurses, and doctors --}}
+                            @if(auth()->user()->isAdmin())
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($appointment->nurse !== null)
+                                        {{-- A nurse has actioned this appointment --}}
+                                        <p class="text-sm text-gray-700 font-medium">
+                                            {{ $appointment->nurse->name }}
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            {{ ucfirst($appointment->status) }}
+                                        </p>
+                                        <p class="text-xs text-gray-400">
+                                            {{ $appointment->actioned_at?->format('M d, Y h:i A') }}
+                                        </p>
+                                    @else
+                                        {{-- No nurse has actioned this appointment yet --}}
+                                        <span class="text-xs text-gray-400 italic">Not actioned</span>
+                                    @endif
+                                </td>
+                            @endif
+
+                            {{-- Action Buttons --}}
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('appointments.show', $appointment) }}"

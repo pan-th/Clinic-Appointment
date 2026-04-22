@@ -47,6 +47,11 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-blue-100 uppercase tracking-wider">
                             Current Status
                         </th>
+                        {{-- My Action column: shows this nurse's own actions only --}}
+                        {{-- A nurse cannot see if a different nurse actioned an appointment --}}
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-blue-100 uppercase tracking-wider">
+                            My Action
+                        </th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-blue-100 uppercase tracking-wider">
                             Update Status
                         </th>
@@ -102,6 +107,37 @@
                                 <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $statusClasses }}">
                                     {{ ucfirst($appointment->status) }}
                                 </span>
+                            </td>
+
+                            {{-- My Action Column --}}
+                            {{-- Only shows this nurse's own recorded actions --}}
+                            {{-- If a different nurse actioned it, shows a dash — never exposes other nurse's identity --}}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if(
+                                    $appointment->actioned_by_nurse_id === auth()->id()
+                                    && $appointment->actioned_at !== null
+                                )
+                                    {{-- This nurse actioned this appointment — show their action and timestamp --}}
+                                    @php
+                                        $myActionClasses = match($appointment->status) {
+                                            'confirmed' => 'bg-green-100 text-green-700 border border-green-200',
+                                            'cancelled' => 'bg-red-100 text-red-700 border border-red-200',
+                                            default     => 'bg-yellow-100 text-yellow-700 border border-yellow-200',
+                                        };
+                                    @endphp
+                                    <div>
+                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $myActionClasses }}">
+                                            {{ ucfirst($appointment->status) }}
+                                        </span>
+                                        <p class="text-xs text-gray-400 mt-1">
+                                            {{ $appointment->actioned_at->format('M d, Y h:i A') }}
+                                        </p>
+                                    </div>
+                                @else
+                                    {{-- Either no nurse has actioned this yet, OR a different nurse did --}}
+                                    {{-- In both cases show a neutral dash — never reveal another nurse's identity --}}
+                                    <span class="text-xs text-gray-400">—</span>
+                                @endif
                             </td>
 
                             {{-- Status Update Form --}}
